@@ -1,10 +1,12 @@
 package carj;
 
+
 import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.RequestHandler;
 import com.amazonaws.services.lambda.runtime.events.S3Event;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3Client;
+import com.amazonaws.services.s3.AmazonS3URI;
 import com.amazonaws.services.s3.event.S3EventNotification.S3EventNotificationRecord;
 import com.amazonaws.services.s3.model.*;
 import org.apache.commons.io.FilenameUtils;
@@ -14,6 +16,7 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URLDecoder;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.attribute.FileTime;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -29,6 +32,10 @@ public class S3EventProcessorUnzip implements RequestHandler<S3Event, String> {
             "\t<LastAccessTime>$LAT$</LastAccessTime>\n" +
             "\t<LastModifiedTime>$LMT$</LastModifiedTime>\n" +
             "</TimeStamps>";
+
+    public static String replaceCharAt(String s, int pos, char c) {
+        return s.substring(0,pos) + c + s.substring(pos+1);
+    }
 
     @Override
     public String handleRequest(S3Event s3Event, Context context) {
@@ -56,14 +63,33 @@ public class S3EventProcessorUnzip implements RequestHandler<S3Event, String> {
                 // Download the zip from S3 into a stream
                 AmazonS3 s3Client = new AmazonS3Client();
                 S3Object s3Object = s3Client.getObject(new GetObjectRequest(srcBucket, srcKey));
-                ZipInputStream zis = new ZipInputStream(s3Object.getObjectContent());
+
+                //StandardCharsets.ISO_8859_1
+                ZipInputStream zis = new ZipInputStream(s3Object.getObjectContent(), StandardCharsets.ISO_8859_1);
                 ZipEntry entry = zis.getNextEntry();
 
                 while (entry != null) {
+
                     String fileName = entry.getName();
+
+                    int pos = -1;
+                    for (int count=0; count < fileName.length(); count++)
+                    {
+                        if (fileName.codePointAt(count) == 156) {
+                            pos = count;
+                        }
+                    }
+                    System.out.print("\n");
+
+                    String utf_filename = fileName;
+                    if (pos > 0) {
+                        char c = '\u00A3';
+                        utf_filename = replaceCharAt(fileName, pos, c);
+                    }
+
+
                     String mimeType = FileMimeType.fromExtension(FilenameUtils.getExtension(fileName)).mimeType();
                     System.out.println("Extracting " + fileName + ", compressed: " + entry.getCompressedSize() + " bytes, extracted: " + entry.getSize() + " bytes, mimetype: " + mimeType);
-
 
                     FileTime ct = entry.getCreationTime();
                     FileTime at = entry.getLastAccessTime();
@@ -100,14 +126,15 @@ public class S3EventProcessorUnzip implements RequestHandler<S3Event, String> {
 
                     String rootFolder = srcKey.replace(".zip", "");
 
-                    String key = String.format("%s/%s%s", rootFolder, FilenameUtils.getFullPath(srcKey), fileName);
+                    String key = String.format("%s/%s%s", rootFolder, FilenameUtils.getFullPath(srcKey), utf_filename);
                     s3Client.putObject(srcBucket, key, is, meta);
 
                     if (bytesCopied > 0L) {
                         ObjectMetadata metadatameta = new ObjectMetadata();
                         metadatameta.setContentLength(template.length());
                         metadatameta.setContentType(FileMimeType.XML.mimeType());
-                        String metadatakey = String.format("%s/%s%s.metadata", rootFolder, FilenameUtils.getFullPath(srcKey), fileName);
+                        metadatameta.setContentEncoding("UTF-8");
+                        String metadatakey = String.format("%s/%s%s.metadata", rootFolder, FilenameUtils.getFullPath(srcKey), utf_filename);
                         InputStream metadataStream = new ByteArrayInputStream(template.getBytes());
                         PutObjectResult result = s3Client.putObject(srcBucket, metadatakey, metadataStream, metadatameta);
                         metadataStream.close();
