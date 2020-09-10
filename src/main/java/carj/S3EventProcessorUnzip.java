@@ -6,7 +6,6 @@ import com.amazonaws.services.lambda.runtime.RequestHandler;
 import com.amazonaws.services.lambda.runtime.events.S3Event;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3Client;
-import com.amazonaws.services.s3.AmazonS3URI;
 import com.amazonaws.services.s3.event.S3EventNotification.S3EventNotificationRecord;
 import com.amazonaws.services.s3.model.*;
 import org.apache.commons.io.FilenameUtils;
@@ -73,16 +72,14 @@ public class S3EventProcessorUnzip implements RequestHandler<S3Event, String> {
                     String fileName = entry.getName();
 
                     int pos = -1;
-                    for (int count=0; count < fileName.length(); count++)
-                    {
+                    for (int count=0; count < fileName.length(); count++) {
                         if (fileName.codePointAt(count) == 156) {
                             pos = count;
                         }
                     }
-                    System.out.print("\n");
 
                     String utf_filename = fileName;
-                    if (pos > 0) {
+                    if (pos > -1) {
                         char c = '\u00A3';
                         utf_filename = replaceCharAt(fileName, pos, c);
                     }
