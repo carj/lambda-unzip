@@ -34,7 +34,7 @@ public class S3EventProcessorUnzip implements RequestHandler<S3Event, String> {
             "\t<LastModifiedTime>$LMT$</LastModifiedTime>\n" +
             "</TimeStamps>\n" + 
             "</DescriptiveMetadata>\n" +
-            "</OPEXMetadata>"
+            "</OPEXMetadata>";
 
     public static String replaceCharAt(String s, int pos, char c) {
         return s.substring(0,pos) + c + s.substring(pos+1);
