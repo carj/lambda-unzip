@@ -26,11 +26,15 @@ import java.util.zip.ZipInputStream;
 public class S3EventProcessorUnzip implements RequestHandler<S3Event, String> {
 
     private static String TEMPLATE = "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>\n" +
+            "<OPEXMetadata xmlns=\"http://www.openpreservationexchange.org/opex/v1.2\">" +
+            "<DescriptiveMetadata>" +
             "<TimeStamps xmlns=\"https://preservica.com/TimeStamps\">\t\t\n" +
             "\t<CreationTime>$CT$</CreationTime>\n" +
             "\t<LastAccessTime>$LAT$</LastAccessTime>\n" +
             "\t<LastModifiedTime>$LMT$</LastModifiedTime>\n" +
-            "</TimeStamps>";
+            "</TimeStamps>\n" + 
+            "</DescriptiveMetadata>\n" +
+            "</OPEXMetadata>"
 
     public static String replaceCharAt(String s, int pos, char c) {
         return s.substring(0,pos) + c + s.substring(pos+1);
@@ -131,7 +135,7 @@ public class S3EventProcessorUnzip implements RequestHandler<S3Event, String> {
                         metadatameta.setContentLength(template.length());
                         metadatameta.setContentType(FileMimeType.XML.mimeType());
                         metadatameta.setContentEncoding("UTF-8");
-                        String metadatakey = String.format("%s/%s%s.metadata", rootFolder, FilenameUtils.getFullPath(srcKey), utf_filename);
+                        String metadatakey = String.format("%s/%s%s.opex", rootFolder, FilenameUtils.getFullPath(srcKey), utf_filename);
                         InputStream metadataStream = new ByteArrayInputStream(template.getBytes());
                         PutObjectResult result = s3Client.putObject(srcBucket, metadatakey, metadataStream, metadatameta);
                         metadataStream.close();
