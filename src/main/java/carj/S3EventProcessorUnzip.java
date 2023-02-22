@@ -127,7 +127,7 @@ public class S3EventProcessorUnzip implements RequestHandler<S3Event, String> {
 
                     String rootFolder = srcKey.replace(".zip", "");
 
-                    String key = String.format("%s/%s%s", rootFolder, FilenameUtils.getFullPath(srcKey), utf_filename);
+                    String key = String.format("%s%s", FilenameUtils.getFullPath(srcKey), utf_filename);
                     s3Client.putObject(srcBucket, key, is, meta);
 
                     if (bytesCopied > 0L) {
@@ -135,7 +135,7 @@ public class S3EventProcessorUnzip implements RequestHandler<S3Event, String> {
                         metadatameta.setContentLength(template.length());
                         metadatameta.setContentType(FileMimeType.XML.mimeType());
                         metadatameta.setContentEncoding("UTF-8");
-                        String metadatakey = String.format("%s/%s%s.opex", rootFolder, FilenameUtils.getFullPath(srcKey), utf_filename);
+                        String metadatakey = String.format("%s%s.opex", FilenameUtils.getFullPath(srcKey), utf_filename);
                         InputStream metadataStream = new ByteArrayInputStream(template.getBytes());
                         PutObjectResult result = s3Client.putObject(srcBucket, metadatakey, metadataStream, metadatameta);
                         metadataStream.close();
