@@ -26,15 +26,15 @@ import java.util.zip.ZipInputStream;
 public class S3EventProcessorUnzip implements RequestHandler<S3Event, String> {
 
     private static String TEMPLATE = "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>\n" +
-            "<OPEXMetadata xmlns=\"http://www.openpreservationexchange.org/opex/v1.2\">" +
-            "<DescriptiveMetadata>" +
+            "<opex:OPEXMetadata xmlns:opex=\"http://www.openpreservationexchange.org/opex/v1.2\">" +
+            "<opex:DescriptiveMetadata>" +
             "<TimeStamps xmlns=\"https://preservica.com/TimeStamps\">\t\t\n" +
             "\t<CreationTime>$CT$</CreationTime>\n" +
             "\t<LastAccessTime>$LAT$</LastAccessTime>\n" +
             "\t<LastModifiedTime>$LMT$</LastModifiedTime>\n" +
             "</TimeStamps>\n" + 
-            "</DescriptiveMetadata>\n" +
-            "</OPEXMetadata>";
+            "</opex:DescriptiveMetadata>\n" +
+            "</opex:OPEXMetadata>";
 
     public static String replaceCharAt(String s, int pos, char c) {
         return s.substring(0,pos) + c + s.substring(pos+1);
